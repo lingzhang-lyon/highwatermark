@@ -7,17 +7,12 @@ class TestHighwatermark < Minitest::Test
     refute_nil ::Highwatermark::VERSION
   end
 
-  def test_it_does_something_useful
-    # assert false
-  end
-
-  def test_could_work
+  def test_file_could_work
   	path = 'test/test_state_file.conf'
   	state_type = 'file'
   	tag = 'testTag'
 
   	hwm = ::Highwatermark::HighWaterMark.new(path, state_type, tag)
-  	# time = Engine.now
   	time = 'testTime'
   	hwm.update_records(time)
   	
@@ -25,6 +20,31 @@ class TestHighwatermark < Minitest::Test
       hwm.last_records()
   end
 
+  def test_redis_could_work
+    path = 'test/test_redis.conf'
+    state_type = 'redis'
+    tag = 'testTag'
+
+    hwm = ::Highwatermark::HighWaterMark.new(path, state_type, tag)
+    time = 'testTime'
+    hwm.update_records(time)
+    
+    assert_equal time,
+      hwm.last_records()
+  end
+
+  def test_memory_could_work
+    path = 'test/test_redis.conf'
+    state_type = 'memory'
+    tag = 'testTag'
+
+    hwm = ::Highwatermark::HighWaterMark.new(path, state_type, tag)
+    time = 'testTime'
+    hwm.update_records(time)
+    
+    assert_equal time,
+      hwm.last_records()
+  end
 
 
 

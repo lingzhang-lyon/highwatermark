@@ -9,6 +9,7 @@ module Highwatermark
 
 
     		require 'yaml'
+        require 'pp'
     		@path = path
     		@state_type = state_type
 			  @tag = tag
@@ -35,11 +36,11 @@ module Highwatermark
   					# Connect to Redis using the redis_config host and port
   					if path
   					    begin
-  					        pp "In redis #{path} Host #{redis_config['host']} port #{redis_config['port']}"
+                  pp "In redis #{path} Host #{redis_config['host']} port #{redis_config['port']}"
   				  			$redis = Redis.new(host: redis_config['host'], port: redis_config['port'])
-  						rescue Exception => e
-  							$log.info e.message
-  		                	$log.info e.backtrace.inspect
+    						rescue Exception => e
+    							pp e.message
+  		            pp e.backtrace.inspect
   					    end
   					end
   				else
@@ -51,17 +52,42 @@ module Highwatermark
       end # end of intitialize
 
 	    def last_records()
+        if @state_type == 'file'
           # return @data[@tag]
           return @data['last_records'][@tag]
-  		end
+        elsif @state_type =='memory'
+          return @data['last_records'][@tag]
+        elsif @state_type =='redis'
+          begin
+            alertStart=$redis.get(@tag)
+            return alertStart
+          rescue Exception => e
+            pp e.message
+            pp e.backtrace.inspect
+          end
+      	end
+      end
 
   		def update_records(time)
-        # @data[@tag] = time
-  			@data['last_records'][@tag] = time
-  			# $log.info  @data
-  			File.open(@path, 'w') {|f|
-  			  f.write YAML.dump(@data)
-  			}
+        if @state_type == 'file'
+          # @data[@tag] = time
+    			@data['last_records'][@tag] = time
+    			# $log.info  @data
+    			File.open(@path, 'w') {|f|
+    			  f.write YAML.dump(@data)
+    			}
+        elsif @state_type =='memory'
+          @data['last_records'][@tag] = time
+          
+        elsif @state_type =='redis'
+          begin
+            alertStart=$redis.set(@tag,time)
+          rescue Exception => e
+            pp e.message
+            pp e.backtrace.inspect
+          end
+        end
+
   		end
 
   	end # end of class Highwatermark
