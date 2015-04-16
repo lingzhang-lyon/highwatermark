@@ -1,8 +1,8 @@
 # Highwatermark
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/highwatermark`. To experiment with that code, run `bin/console` for an interactive prompt.
+This gem is for storing your high watermark in state file or redis cache.
 
-TODO: Delete this and the text above, and describe your gem
+If not set up state file or redis, it will just use memory 
 
 ## Installation
 
@@ -22,7 +22,47 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+In your ruby code:
+```ruby
+# To initilize high watermark
+require 'highwatermark'
+
+path = "/path/to/state/file/or/redis/conf"   # the file path for store state or the redis configure
+state_type = "file" # state_type: could be <redis/file/memory>
+tag = "your tag" # tag: is the tag that will be used in state file or redis
+
+hwm = Highwatermark::HighWaterMark.new(path, state_type, tag)
+
+# To store time in high watermark
+time = "what your want to store in high watermark"
+hwm.update_records(time)
+
+# To get the high watermark
+hwm.last_records()
+
+```
+
+Example of redis.conf (if set state_type = 'redis'):
+
+```
+# redis configure
+host: 127.0.0.1
+port: 6379
+
+```	
+
+## Test
+
+Install rake and minitest,then use rake run the test
+
+```
+gem install minitest
+gem install rake
+rake test --trace
+
+```
+
+
 
 ## Development
 
