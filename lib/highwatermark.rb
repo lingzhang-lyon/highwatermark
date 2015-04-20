@@ -2,7 +2,8 @@ require "highwatermark/version"
 
 module Highwatermark
     class HighWaterMark
-    	def initialize(path,state_type,tag)
+    	# def initialize(path,state_type,tag)
+      def initialize(path,state_type)
     		# path: is th file path for store state or the redis configure
     		# state_type: could be <redis/file/memory>
     		# tag: is the tag that will be used in state file or redis 
@@ -12,7 +13,7 @@ module Highwatermark
         require 'pp'
     		@path = path
     		@state_type = state_type
-			  @tag = tag
+			  # @tag = tag
 
     		@data = {}
     		if @state_type =='file'
@@ -51,15 +52,15 @@ module Highwatermark
         @data['last_records'] = {}
       end # end of intitialize
 
-	    def last_records()
+	    def last_records(tag)
         if @state_type == 'file'
           # return @data[@tag]
-          return @data['last_records'][@tag]
+          return @data['last_records'][tag]
         elsif @state_type =='memory'
-          return @data['last_records'][@tag]
+          return @data['last_records'][tag]
         elsif @state_type =='redis'
           begin
-            alertStart=$redis.get(@tag)
+            alertStart=$redis.get(tag)
             return alertStart
           rescue Exception => e
             pp e.message
@@ -68,20 +69,20 @@ module Highwatermark
       	end
       end
 
-  		def update_records(time)
+  		def update_records(time, tag)
         if @state_type == 'file'
           # @data[@tag] = time
-    			@data['last_records'][@tag] = time
+    			@data['last_records'][tag] = time
     			# $log.info  @data
     			File.open(@path, 'w') {|f|
     			  f.write YAML.dump(@data)
     			}
         elsif @state_type =='memory'
-          @data['last_records'][@tag] = time
+          @data['last_records'][tag] = time
           
         elsif @state_type =='redis'
           begin
-            alertStart=$redis.set(@tag,time)
+            alertStart=$redis.set(tag,time)
           rescue Exception => e
             pp e.message
             pp e.backtrace.inspect

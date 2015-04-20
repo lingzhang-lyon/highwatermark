@@ -31,14 +31,14 @@ path = "/path/to/state/file/or/redis/conf"   # the file path for store state or 
 state_type = "file" # state_type: could be <redis/file/memory>
 tag = "your tag" # tag: is the tag that will be used in state file or redis
 
-hwm = Highwatermark::HighWaterMark.new(path, state_type, tag)
+hwm = Highwatermark::HighWaterMark.new(path, state_type)
 
 # To store time in high watermark
 time = "what your want to store in high watermark"
-hwm.update_records(time)
+hwm.update_records(time, tag)
 
 # To get the high watermark
-hwm.last_records()
+hwm.last_records(tag)
 
 ```
 
@@ -49,7 +49,17 @@ Example of redis.conf (if set state_type = 'redis'):
 host: 127.0.0.1
 port: 6379
 
-```	
+```
+
+Output in the state file:
+
+```
+---
+last_records:
+  your tag: 1429572200
+
+```
+
 
 ## Test
 
