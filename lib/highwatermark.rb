@@ -19,6 +19,7 @@ module Highwatermark
     		if @state_type =='file'
     			if File.exists?(path)
   					@data = YAML.load_file(path)
+            pp @data
   					if @data == false || @data == []
   						# this happens if an users created an empty file accidentally
   						@data = {}
@@ -49,13 +50,19 @@ module Highwatermark
   				end
       		@data = {}
       	end # end of checking @state_type
-        @data['last_records'] = {}
+
+        if @data['last_records']==nil
+          @data['last_records'] = {}
+        end
+        
       end # end of intitialize
 
 	    def last_records(tag)
         if @state_type == 'file'
           # return @data[@tag]
+          # pp @data['last_records'][tag]
           return @data['last_records'][tag]
+
         elsif @state_type =='memory'
           return @data['last_records'][tag]
         elsif @state_type =='redis'

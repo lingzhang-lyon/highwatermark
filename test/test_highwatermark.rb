@@ -55,6 +55,32 @@ class TestHighwatermark < Minitest::Test
       hwm.last_records(tag)
   end
 
+  def test_read_from_file_then_update
+    path = 'test/test_state_file.conf'
+    state_type = 'file'
+    tag = 'testTagForFile'
+
+    # hwm = ::Highwatermark::HighWaterMark.new(path, state_type, tag)
+    hwm = ::Highwatermark::HighWaterMark.new(path, state_type)
+    refute_nil hwm.last_records(tag)
+    
+    newTestTime = "new_" + hwm.last_records(tag)
+    hwm.update_records(newTestTime, tag)
+    refute_nil hwm.last_records(tag)
+
+
+  end
+
+  def test_read_from_redis
+    path = 'test/test_redis.conf'
+    state_type = 'redis'
+    tag = 'testTagForRedis'
+
+    # hwm = ::Highwatermark::HighWaterMark.new(path, state_type, tag)
+    hwm = ::Highwatermark::HighWaterMark.new(path, state_type)
+    refute_empty hwm.last_records(tag) 
+  end
+
 
 
 end
