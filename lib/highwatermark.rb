@@ -2,47 +2,56 @@ require "highwatermark/version"
 
 module Highwatermark
     class HighWaterMark
-      # def initialize(path,state_type,tag)
-      def initialize(path,state_type)
+      def initialize(path,state_type, state_tag)
         # path: is th file path for store state or the redis configure
         # state_type: could be <redis/file/memory>
-        # tag: is the tag that will be used in state file or redis 
 
 
         require 'yaml'
-        require 'pp'
         @path = path
         @state_type = state_type
-        # @tag = tag
+        @state_tag = state_tag
 
         @data = {}
         if @state_type =='file'
-          if File.exists?(path)
-            @data = YAML.load_file(path)
-            pp @data
+
+          if File.exists?(@path)
+            @data = YAML.load_file(@path)
             if @data == false || @data == []
               # this happens if an users created an empty file accidentally
+              puts "state_file on #{@path.inspect} is empty "
               @data = {}
             elsif !@data.is_a?(Hash)
-              raise "state_file on #{@path.inspect} is invalid"
+              # if the file contains invalid data, that is not a hash
+              puts "state_file data on #{@path.inspect} is invalid"
+              # don't want to over write the data in original file
+              # create a new file on default path when update_records  
+              @path = "test/default_state_file_"+@state_tag+".yaml"
+              puts "will use default state_file path #{@path.inspect}"
+              @data = {}
             end
           else
+            # if the file is not exist, just create an empty hash
+            puts "state_file on #{@path.inspect} not exists"
             @data = {}
           end
+
         elsif @state_type =='memory'
           @data = {}
+
+
         elsif @state_type =='redis'
           require 'redis'
-          $redis = if File.exists?(path)
-            redis_config = YAML.load_file(path)
+          $redis = if File.exists?(@path)
+            redis_config = YAML.load_file(@path)
             # Connect to Redis using the redis_config host and port
-            if path
+            if @path
                 begin
-                  pp "In redis #{path} Host #{redis_config['host']} port #{redis_config['port']}"
+                  puts "In redis #{path} Host #{redis_config['host']} port #{redis_config['port']}"
                   $redis = Redis.new(host: redis_config['host'], port: redis_config['port'])
                 rescue Exception => e
-                  pp e.message
-                  pp e.backtrace.inspect
+                  # pp e.message
+                  # pp e.backtrace.inspect
                 end
             end
           else
@@ -59,8 +68,6 @@ module Highwatermark
 
       def last_records(tag)
         if @state_type == 'file'
-          # return @data[@tag]
-          # pp @data['last_records'][tag]
           return @data['last_records'][tag]
 
         elsif @state_type =='memory'
@@ -70,17 +77,15 @@ module Highwatermark
             alertStart=$redis.get(tag)
             return alertStart
           rescue Exception => e
-            pp e.message
-            pp e.backtrace.inspect
+            # pp e.message
+            # pp e.backtrace.inspect
           end
         end
       end
 
       def update_records(time, tag)
         if @state_type == 'file'
-          # @data[@tag] = time
           @data['last_records'][tag] = time
-          # $log.info  @data
           File.open(@path, 'w') {|f|
             f.write YAML.dump(@data)
           }
@@ -91,8 +96,8 @@ module Highwatermark
           begin
             alertStart=$redis.set(tag,time)
           rescue Exception => e
-            pp e.message
-            pp e.backtrace.inspect
+            # pp e.message
+            # pp e.backtrace.inspect
           end
         end
 
