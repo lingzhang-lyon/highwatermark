@@ -2,15 +2,21 @@ require "highwatermark/version"
 
 module Highwatermark
     class HighWaterMark
-      def initialize(path,state_type, state_tag)
+      # def initialize(path,state_type, state_tag)
+      def initialize(parameters)
+
+
         # path: is th file path for store state or the redis configure
         # state_type: could be <redis/file/memory>
 
 
         require 'yaml'
-        @path = path
-        @state_type = state_type
-        @state_tag = state_tag
+       
+        @state_type = parameters["state_type"]
+        @state_tag = parameters["state_tag"]
+        @path = parameters["state_file"]
+        @redis_host = parameters["redis_host"]
+        @redis_port = parameters["redis_port"]
 
         @data = {}
         if @state_type =='file'
@@ -42,20 +48,17 @@ module Highwatermark
 
         elsif @state_type =='redis'
           require 'redis'
-          $redis = if File.exists?(@path)
-            redis_config = YAML.load_file(@path)
-            # Connect to Redis using the redis_config host and port
-            if @path
-                begin
-                  puts "In redis #{path} Host #{redis_config['host']} port #{redis_config['port']}"
-                  $redis = Redis.new(host: redis_config['host'], port: redis_config['port'])
-                rescue Exception => e
-                  # pp e.message
-                  # pp e.backtrace.inspect
-                end
+          if (@redis_host == nil || @redis_port == nil)
+            puts "No Redis host and port specified, use default local setting"
+            $redis = Redis.new
+          else # if has the redis host and port configure
+            begin
+              puts "Redis Host #{@redis_host} port #{@redis_port}"
+              $redis = Redis.new(host: @redis_host, port: @redis_port)
+            rescue Exception => e
+              puts e.message
+              puts e.backtrace.inspect
             end
-          else
-              Redis.new
           end
           @data = {}
         end # end of checking @state_type
@@ -66,7 +69,7 @@ module Highwatermark
         
       end # end of intitialize
 
-      def last_records(tag)
+      def last_records(tag=nil)
         if @state_type == 'file'
           return @data['last_records'][tag]
 
@@ -83,7 +86,7 @@ module Highwatermark
         end
       end
 
-      def update_records(time, tag)
+      def update_records(time, tag=nil)
         if @state_type == 'file'
           @data['last_records'][tag] = time
           File.open(@path, 'w') {|f|
