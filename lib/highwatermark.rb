@@ -18,29 +18,35 @@ module Highwatermark
         @redis_host = parameters["redis_host"]
         @redis_port = parameters["redis_port"]
 
+        @default_state_file_path = "  default_state_file_"+@state_tag+".yaml"
+
         @data = {}
         if @state_type =='file'
 
-          if File.exists?(@path)
-            @data = YAML.load_file(@path)
-            if @data == false || @data == []
-              # this happens if an users created an empty file accidentally
-              puts "state_file on #{@path.inspect} is empty "
+            if File.directory? (@path)
+              # create a new state file in the provided directory
+              # when recover from failure will also try to read from this file
+              @path = @path+"/"+@state_tag+".yaml"
+              puts "provided path is valid derectory, created a new file on #{@path.inspect}"
               @data = {}
-            elsif !@data.is_a?(Hash)
-              # if the file contains invalid data, that is not a hash
-              puts "state_file data on #{@path.inspect} is invalid"
-              # don't want to over write the data in original file
-              # create a new file on default path when update_records  
-              @path = "test/default_state_file_"+@state_tag+".yaml"
-              puts "will use default state_file path #{@path.inspect}"
-              @data = {}
+            else # not a directory, then check if it's a valid file
+              if File.exist?(@path)
+                @data = YAML.load_file(@path)
+                if @data == false || @data == []
+                  # this happens if an users created an empty file accidentally
+                  puts "state file on #{@path.inspect} is empty "
+                  @data = {}
+                elsif !@data.is_a?(Hash)
+                  # if the file contains invalid data, that is not a hash
+                  raise "state file on #{@path.inspect} contains invalid data, please use other file"
+                end
+              else
+                raise "#{@path.inspect} is not a valid directory or the file not exists, please provide valid state file path"
+              end
+              
             end
-          else
-            # if the file is not exist, just create an empty hash
-            puts "state_file on #{@path.inspect} not exists"
-            @data = {}
-          end
+
+
 
         elsif @state_type =='memory'
           @data = {}
