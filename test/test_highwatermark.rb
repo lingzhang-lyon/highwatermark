@@ -7,6 +7,67 @@ class TestHighwatermark < Minitest::Test
     refute_nil ::Highwatermark::VERSION
   end
 
+####### test for configure ######
+
+  def test_state_type_is_not_provided
+    parameters ={
+      "state_tag" => "testTagForFile", 
+      # "state_type" =>"file",    
+      "state_file" => "test/state_files/test_state_file.yaml"     
+    }
+    begin
+      hwm = ::Highwatermark::HighWaterMark.new(parameters)
+    rescue Exception => e
+      puts e.message
+      assert_equal e.message, "The parameter 'state_type' is required, please provide state_type (file, redis or memory)"
+    end
+  end
+
+  def test_state_tag_is_not_provided
+    parameters ={
+      # "state_tag" => "testTagForFile",
+      "state_type" =>"file",     
+      "state_file" => "test/state_files/test_state_file.yaml"     
+    }
+    begin
+      hwm = ::Highwatermark::HighWaterMark.new(parameters)
+    rescue Exception => e
+      puts e.message
+      assert_equal e.message, "The paramerter 'state_tag' is required, please provide state_tag for labelling high watermark info"
+    end
+  end
+
+  def test_used_state_file_when_state_type_is_not_file
+    parameters ={
+      "state_tag" => "testTagForFile",
+      "state_type" => "redis",     
+      "state_file" => "test/state_files/test_state_file.yaml"     
+    }
+    begin
+      hwm = ::Highwatermark::HighWaterMark.new(parameters)
+    rescue Exception => e
+      puts e.message
+      assert_equal e.message, "To use 'state_file' parameter, 'state_type' need to be set to 'file'"
+    end
+  end
+
+  def test_used_redis_host_and_port_when_state_type_is_not_redis
+    parameters ={
+      "state_tag" => "testTagForFile",
+      "state_type" =>"file",     
+      "redis_host" => "127.0.0.1",
+      "redis_port" => "6379"
+    }
+    begin
+      hwm = ::Highwatermark::HighWaterMark.new(parameters)
+    rescue Exception => e
+      puts e.message
+      assert_equal e.message, "To use 'redis_host' or 'redis_port' parameters, 'state_type' need to be set to 'redis'"
+    end
+  end
+
+
+
 
 ######## test for file ###########
   def test_file_could_work
@@ -79,7 +140,7 @@ class TestHighwatermark < Minitest::Test
     rescue Exception => e
       puts e.message
       path = parameters["state_file"]
-      assert_equal e.message, "#{path.inspect} is not a valid directory or the file not exists, please provide valid state file path"
+      assert_equal e.message, "#{path.inspect} is not a valid directory or file, please provide valid state file path"
     end
   end
 
@@ -109,6 +170,36 @@ class TestHighwatermark < Minitest::Test
     hwm = ::Highwatermark::HighWaterMark.new(parameters)
     tag = parameters["state_tag"]
     assert_nil hwm.last_records(tag)
+  end 
+
+  def test_update_with_tag_and_then_read_without_tag
+    parameters ={
+      "state_tag" => "TestTag",     
+      "state_type" =>"file",
+      "state_file" => "test/state_files/test_state_file.yaml"      
+    }
+
+    hwm = ::Highwatermark::HighWaterMark.new(parameters)
+    time = 'testTime'
+    tag = parameters["state_tag"]
+    hwm.update_records(time, tag)   
+
+    assert_equal time, hwm.last_records()
+  end 
+
+  def test_both_update_and_read_without_tag
+    parameters ={
+      "state_tag" => "TestTag",     
+      "state_type" =>"file",
+      "state_file" => "test/state_files/test_state_file.yaml"      
+    }
+
+    hwm = ::Highwatermark::HighWaterMark.new(parameters)
+    time = 'testTime'
+    tag = parameters["state_tag"]
+    hwm.update_records(time)   
+
+    assert_equal time, hwm.last_records()
   end 
 
 
