@@ -27,29 +27,34 @@ In your ruby code:
 # To initilize high watermark
 require 'highwatermark'
 
-path = "/path/to/state/file/or/redis/conf"   # the file path for store state or the redis configure
-state_type = "file" # state_type: could be <redis/file/memory>
-tag = "your tag" # tag: is the tag that will be used in state file or redis
+highwatermark_parameters={
+	"state_tag" => "your tag",  # required, is the tag that will be used in state file or redis     
+	"state_type" => "file",  # required: could be <redis/file/memory>
+	"state_file" => "/path/to/state/file/or/redis/conf", # optional, the file path for store state, need state_type set to 'file'
+	"redis_host" => '127.0.0.1', #optional, to set remote redis, need state_type set to 'redis'
+	"redis_port" => '6379'  #optional, to set remote redis, need state_type set to 'redis'   
+}
 
-hwm = Highwatermark::HighWaterMark.new(path, state_type)
+hwm = Highwatermark::HighWaterMark.new(highwatermark_parameters)
 
 # To store time in high watermark
 time = "what your want to store in high watermark"
-hwm.update_records(time, tag)
+hwm.update_records(time) #use tag in the configure 'state_tag'
+
+tag = "some other specified tag"
+hwm.update_records(time, tag) # use some other specified tag
+
 
 # To get the high watermark
-hwm.last_records(tag)
+hwm.last_records() #get high watermark with tag in the configure 'state_tag'
+
+tag = "some other specified tag"
+hwm.last_records(tag) #get high watermark with some other specified tag
+
+
 
 ```
 
-Example of redis.conf (if set state_type = 'redis'):
-
-```
-# redis configure
-host: 127.0.0.1
-port: 6379
-
-```
 
 Output in the state file:
 
